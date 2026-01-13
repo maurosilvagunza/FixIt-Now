@@ -1,41 +1,31 @@
 
-import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { RepairAnalysis } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 const SYSTEM_INSTRUCTION = `
-You are "FixIt Now", a world-class home and automotive repair emergency assistant.
-Your goal is to provide IMMEDIATE, ASSERTIVE, and CLEAR instructions based on images/video frames.
+Você é o "FixIt Now", um assistente de reparos domésticos e automotivos de elite.
+Seu objetivo é fornecer instruções IMEDIATAS, ASSERTIVAS e CLARAS baseadas em imagens ou quadros de vídeo.
 
-DIAGNOSTIC CAPABILITIES:
-1. Identify common emergencies: water leaks, electrical panel issues, car battery problems, smoke, gas smells (visual cues), etc.
-2. Locate specific components (valves, breakers, terminals).
+CAPACIDADES DE DIAGNÓSTICO:
+1. Identificar emergências: vazamentos de água, problemas em painéis elétricos, baterias de carro, fumaça, etc.
+2. Localizar componentes específicos (válvulas, disjuntores, terminais).
 
-OUTPUT RULES:
-- Provide a JSON response only.
-- 'instruction': Short, imperative command (e.g., "CLOSE THE VALVE NOW!").
-- 'priority': 'CRITICAL' for immediate danger, 'SAFETY_WARNING' for electrical/gas risks, 'INFO' for general guidance.
-- 'overlays': Array of markers to draw on the screen. x and y are normalized coordinates (0-100).
-- 'overlays[i].type': 'arrow', 'circle', or 'rect'.
-- 'overlays[i].color': 'red' for danger/alerts, 'green' for correct actions, 'blue' for components.
-- Always prioritize safety. If you see exposed wires and it's dangerous, 'priority' must be 'SAFETY_WARNING' and 'instruction' must be "DO NOT TOUCH! CALL AN ELECTRICIAN."
+REGRAS DE SAÍDA:
+- Responda SEMPRE em Português do Brasil.
+- 'instruction': Comando curto e imperativo (ex: "FECHE O REGISTRO AGORA!").
+- 'priority': 'CRITICAL' para perigo imediato, 'SAFETY_WARNING' para riscos elétricos/gás, 'INFO' para orientações gerais.
+- 'overlays': Marcadores visuais para a tela. Coordenadas x e y normalizadas (0-100).
+- SEMPRE priorize a segurança. Se houver fios expostos ou perigo real, use 'SAFETY_WARNING' e instrua a não tocar e chamar um profissional.
 
-If the issue seems resolved, set 'isIssueResolved' to true.
+Forneça a resposta apenas em formato JSON.
 `;
 
 const REPAIR_SCHEMA = {
   type: Type.OBJECT,
   properties: {
     instruction: { type: Type.STRING },
-    detailedSteps: { 
-      type: Type.ARRAY, 
-      items: { type: Type.STRING } 
-    },
-    priority: { 
-      type: Type.STRING,
-      enum: ['CRITICAL', 'SAFETY_WARNING', 'INFO']
-    },
+    detailedSteps: { type: Type.ARRAY, items: { type: Type.STRING } },
+    priority: { type: Type.STRING, enum: ['CRITICAL', 'SAFETY_WARNING', 'INFO'] },
     isIssueResolved: { type: Type.BOOLEAN },
     detectedObject: { type: Type.STRING },
     overlays: {
@@ -58,6 +48,7 @@ const REPAIR_SCHEMA = {
 };
 
 export const analyzeFrame = async (base64Image: string, userPrompt: string = ""): Promise<RepairAnalysis> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
@@ -65,7 +56,7 @@ export const analyzeFrame = async (base64Image: string, userPrompt: string = "")
         {
           parts: [
             { inlineData: { mimeType: "image/jpeg", data: base64Image } },
-            { text: userPrompt || "Analyze this scene for any emergency repair issues and provide guidance." }
+            { text: userPrompt || "Identifique qualquer problema de reparo urgente nesta imagem e dê instruções." }
           ]
         }
       ],
@@ -76,19 +67,19 @@ export const analyzeFrame = async (base64Image: string, userPrompt: string = "")
       }
     });
 
-    const result = JSON.parse(response.text || "{}");
-    return result as RepairAnalysis;
+    return JSON.parse(response.text || "{}") as RepairAnalysis;
   } catch (error) {
-    console.error("Gemini Analysis Error:", error);
+    console.error("Erro na análise Gemini:", error);
     throw error;
   }
 };
 
 export const speakInstruction = async (text: string) => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: `Assertive command: ${text}` }] }],
+      contents: [{ parts: [{ text: `Diga de forma assertiva: ${text}` }] }],
       config: {
         responseModalities: ["AUDIO"],
         speechConfig: {
@@ -109,31 +100,23 @@ export const speakInstruction = async (text: string) => {
       source.start();
     }
   } catch (error) {
-    console.error("TTS Error:", error);
+    console.error("Erro no TTS:", error);
   }
 };
 
-// Audio Helpers
 function decode(base64: string) {
   const binaryString = atob(base64);
-  const len = binaryString.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
     bytes[i] = binaryString.charCodeAt(i);
   }
   return bytes;
 }
 
-async function decodeAudioData(
-  data: Uint8Array,
-  ctx: AudioContext,
-  sampleRate: number,
-  numChannels: number,
-): Promise<AudioBuffer> {
+async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: number, numChannels: number): Promise<AudioBuffer> {
   const dataInt16 = new Int16Array(data.buffer);
   const frameCount = dataInt16.length / numChannels;
   const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
-
   for (let channel = 0; channel < numChannels; channel++) {
     const channelData = buffer.getChannelData(channel);
     for (let i = 0; i < frameCount; i++) {

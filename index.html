@@ -21,6 +21,10 @@
         overflow: hidden;
       }
     </style>
+    <script>
+      // Garante que o process.env não quebre no navegador
+      window.process = window.process || { env: {} };
+    </script>
 <script type="importmap">
 {
   "imports": {

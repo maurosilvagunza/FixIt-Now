@@ -22,7 +22,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     <div className="absolute bottom-0 left-0 w-full p-4 z-20 pointer-events-none">
       <div className="max-w-xl mx-auto space-y-4 pointer-events-auto">
         
-        {/* Instruction Card */}
         {analysis && (
           <div className={`rounded-2xl p-4 shadow-2xl backdrop-blur-md border ${
             analysis.priority === 'CRITICAL' ? 'bg-red-900/80 border-red-500' :
@@ -48,11 +47,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 )}
                 <div className="mt-2 flex items-center justify-between">
                   <span className="text-xs font-mono text-slate-400 uppercase tracking-widest">
-                    AI Diagnostic: {analysis.detectedObject}
+                    Diagnóstico: {analysis.detectedObject}
                   </span>
                   {analysis.isIssueResolved && (
                     <span className="flex items-center gap-1 text-green-400 font-bold text-xs">
-                      <CheckCircle2 className="w-4 h-4" /> RESOLVED
+                      <CheckCircle2 className="w-4 h-4" /> RESOLVIDO
                     </span>
                   )}
                 </div>
@@ -61,7 +60,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           </div>
         )}
 
-        {/* Buttons */}
         <div className="flex items-center justify-center gap-4">
           <button
             onClick={() => onAnalyze()}
@@ -75,12 +73,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             {isAnalyzing ? (
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 border-2 border-slate-400 border-t-slate-900 rounded-full animate-spin" />
-                Analyzing Scene...
+                Analisando...
               </div>
             ) : (
               <>
                 <Camera className="w-5 h-5" />
-                Diagnose Emergency
+                Diagnosticar Agora
               </>
             )}
           </button>
@@ -90,19 +88,18 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             className={`p-4 rounded-full transition ${
               isTTSEnabled ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400'
             }`}
-            title={isTTSEnabled ? 'Audio Guide ON' : 'Audio Guide OFF'}
+            title={isTTSEnabled ? 'Guia de Áudio Ligado' : 'Guia de Áudio Desligado'}
           >
             {isTTSEnabled ? <Volume2 /> : <VolumeX />}
           </button>
         </div>
         
-        {/* Rapid Choice Chips */}
         {!analysis && !isAnalyzing && (
           <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar justify-center">
-            {["Water Leak", "Power Out", "Battery Jump", "Gas Smell"].map(label => (
+            {["Vazamento", "Falta de Luz", "Chupeta Bateria", "Cheiro de Gás"].map(label => (
               <button
                 key={label}
-                onClick={() => onAnalyze(`Checking for ${label}`)}
+                onClick={() => onAnalyze(`Verificando: ${label}`)}
                 className="bg-slate-800/60 hover:bg-slate-700/80 px-4 py-2 rounded-full text-xs font-medium border border-slate-600 transition whitespace-nowrap"
               >
                 {label}
