@@ -1,0 +1,8 @@
+{
+  "name": "FixIt Now - AI Repair Assistant",
+  "description": "An emergency home and automotive repair assistant that uses computer vision and AR overlays to guide you through urgent fixes.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
