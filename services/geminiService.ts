@@ -48,7 +48,11 @@ const REPAIR_SCHEMA = {
 };
 
 export const analyzeFrame = async (base64Image: string, userPrompt: string = ""): Promise<RepairAnalysis> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = (import.meta as any).env.VITE_API_KEY || process.env.VITE_API_KEY;
+  if (!apiKey || apiKey === 'undefined' || apiKey.includes('YOUR_GEMINI_API_KEY')) {
+    throw new Error("Chave de API Gemini não configurada. Configure VITE_API_KEY no .env.local");
+  }
+  const ai = new GoogleGenAI({ apiKey });
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
@@ -75,7 +79,12 @@ export const analyzeFrame = async (base64Image: string, userPrompt: string = "")
 };
 
 export const speakInstruction = async (text: string) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = (import.meta as any).env.VITE_API_KEY || process.env.VITE_API_KEY;
+  if (!apiKey || apiKey === 'undefined' || apiKey.includes('YOUR_GEMINI_API_KEY')) {
+    console.warn("Chave de API não configurada para TTS");
+    return;
+  }
+  const ai = new GoogleGenAI({ apiKey });
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",

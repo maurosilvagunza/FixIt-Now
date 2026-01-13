@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { analyzeFrame, speakInstruction } from './services/geminiService';
 import { RepairAnalysis, AppState } from './types';
@@ -87,7 +86,7 @@ const App: React.FC = () => {
   }, [state.isTTSEnabled]);
 
   return (
-    <div className="relative w-full h-screen bg-black overflow-hidden font-sans flex flex-col">
+    <div className="relative w-full h-screen bg-black overflow-hidden font-sans">
       <div className="absolute top-0 left-0 w-full p-4 z-30 flex items-center justify-between pointer-events-none">
         <div className="flex items-center gap-2 bg-slate-900/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-700/50 pointer-events-auto">
           <Wrench className="w-5 h-5 text-blue-400" />
@@ -101,16 +100,16 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex-1 relative w-full flex items-center justify-center bg-black">
+      <div className="relative w-full h-full flex items-center justify-center bg-black">
         {!state.isCameraReady && (
-          <div className="flex flex-col items-center gap-4 text-slate-400 z-10">
+          <div className="flex flex-col items-center gap-4 text-slate-400">
             <div className="w-12 h-12 border-4 border-slate-700 border-t-blue-500 rounded-full animate-spin" />
             <p className="text-sm font-medium">Iniciando Visão Computacional...</p>
           </div>
         )}
 
-        <video ref={videoRef} autoPlay playsInline muted className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${state.isCameraReady ? 'opacity-100' : 'opacity-0'}`} />
-        <div className={`absolute inset-0 w-full h-full bg-gradient-to-br from-slate-900 via-slate-800 to-black transition-opacity duration-500 ${state.isCameraReady ? 'opacity-0' : 'opacity-100'}`} />
+        <video ref={videoRef} autoPlay playsInline muted className={`absolute w-full h-full object-cover transition-opacity duration-1000 ${state.isCameraReady ? 'opacity-100' : 'opacity-0'}`} />
+        <div className={`absolute w-full h-full bg-gradient-to-br from-slate-900 via-slate-800 to-black transition-opacity duration-1000 ${state.isCameraReady ? 'opacity-0' : 'opacity-100'}`} />
         <canvas ref={canvasRef} className="hidden" />
 
         {state.isCameraReady && state.analysis && (
@@ -118,7 +117,7 @@ const App: React.FC = () => {
         )}
 
         {state.isAnalyzing && (
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent z-20 animate-pulse" />
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent z-20 animate-[scan_2s_infinite]" />
         )}
       </div>
 
@@ -131,6 +130,16 @@ const App: React.FC = () => {
           onToggleTTS={() => setState(p => ({...p, isTTSEnabled: !p.isTTSEnabled}))} 
         />
       )}
+
+      <style>{`
+        @keyframes scan {
+          0% { top: 0%; opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 1; }
+          100% { top: 100%; opacity: 0; }
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+      `}</style>
     </div>
   );
 };
