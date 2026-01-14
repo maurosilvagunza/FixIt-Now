@@ -3,7 +3,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
     <title>FixIt Now - Assistente IA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -12,8 +12,9 @@
         padding: 0;
         width: 100%;
         height: 100%;
-        background-color: #0f172a;
+        background-color: #000;
         overflow: hidden;
+        overscroll-behavior: none;
       }
       @keyframes scan {
         0% { top: 0%; opacity: 0; }
@@ -23,7 +24,6 @@
       }
     </style>
     <script>
-      // Garante que o objeto process.env exista para evitar erros de referência
       window.process = window.process || {};
       window.process.env = window.process.env || {};
     </script>
