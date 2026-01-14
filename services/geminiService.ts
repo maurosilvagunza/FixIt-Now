@@ -4,22 +4,23 @@ import { RepairAnalysis } from "../types";
 
 const SYSTEM_INSTRUCTION = `
 Você é o "Mecanismo de Visão Espacial e Renderização Multimodal" do sistema FixIt Now.
-Sua missão é mapear o ambiente e traduzir necessidades técnicas em instruções cinéticas e holográficas de longa duração (10 segundos).
+Sua missão é mapear o ambiente e traduzir necessidades técnicas em instruções cinéticas e holográficas precisas de 10 segundos.
 
 PROTOCOLO DE ANÁLISE E EXECUÇÃO:
-1. Diagnóstico de Objeto e Estado: Identifique o objeto e seu estado anômalo.
+1. Diagnóstico de Objeto e Estado: Identifique o objeto e seu estado anômalo (ex: cabo solto, parafuso frouxo).
 2. Mapeamento de Vetores: Forneça coordenadas [x, y] (0-100) para ancoragem AR.
-3. Biblioteca de Hologramas Dinâmicos:
-   - 'ghost_hands': Para ações manuais contínuas (segurar, girar, empurrar).
-   - 'spatial_arrow': Para indicar direção de fluxo ou movimento persistente.
-   - 'exploded_view': Para visualização técnica detalhada de encaixes.
-   - 'glow_zone': Para destaque de áreas críticas ou perigo.
-4. Sincronização de Gatilho: Comando de áudio deve ser emitido no início da animação de 10s.
+3. Biblioteca de Hologramas Dinâmicos (SELEÇÃO CRÍTICA):
+   - 'ghost_hands': Use SEMPRE para ações manuais. O 'label' DEVE ser uma destas ações: "EMPURRAR", "GIRAR", "PUXAR", "PRESSIONAR" ou "CONECTAR".
+   - 'spatial_arrow': Use para indicar direção de encaixe ou fluxo.
+   - 'exploded_view': Use para mostrar o interior de componentes.
+   - 'glow_zone': Use para destacar perigo ou foco.
+
+Sincronização: A instrução de áudio deve ser curta e direta ao ponto, disparada junto com a animação.
 
 REGRAS:
 - Responda SEMPRE em Português do Brasil.
 - Retorne APENAS JSON puro.
-- 'instruction': Comando de ação claro (max 8 palavras).
+- 'instruction': Comando de ação (ex: "Empurre o cabo para conectar").
 - 'priority': 'CRITICAL', 'SAFETY_WARNING', 'INFO'.
 `;
 
@@ -40,7 +41,7 @@ const REPAIR_SCHEMA = {
           x: { type: Type.NUMBER },
           y: { type: Type.NUMBER },
           color: { type: Type.STRING, enum: ['red', 'green', 'blue', 'yellow'] },
-          label: { type: Type.STRING },
+          label: { type: Type.STRING, description: "Ação específica: EMPURRAR, GIRAR, PUXAR, PRESSIONAR, CONECTAR" },
           rotation: { type: Type.NUMBER }
         },
         required: ['type', 'x', 'y', 'color']
@@ -67,7 +68,7 @@ export const analyzeFrame = async (base64Image: string, userPrompt: string = "")
       contents: [{
         parts: [
           { inlineData: { mimeType: "image/jpeg", data: base64Image } },
-          { text: userPrompt || "Inicie mapeamento de vetores AR para animação de 10 segundos." }
+          { text: userPrompt || "Execute mapeamento de vetores AR para uma animação de 10 segundos que demonstre a ação física necessária." }
         ]
       }],
       config: {
