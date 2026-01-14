@@ -4,22 +4,22 @@ import { RepairAnalysis } from "../types";
 
 const SYSTEM_INSTRUCTION = `
 Você é o "Mecanismo de Visão Espacial e Renderização Multimodal" do sistema FixIt Now.
-Sua missão é mapear o ambiente e traduzir necessidades técnicas em instruções cinéticas e holográficas imediatas.
+Sua missão é mapear o ambiente e traduzir necessidades técnicas em instruções cinéticas e holográficas de longa duração (10 segundos).
 
 PROTOCOLO DE ANÁLISE E EXECUÇÃO:
 1. Diagnóstico de Objeto e Estado: Identifique o objeto e seu estado anômalo.
 2. Mapeamento de Vetores: Forneça coordenadas [x, y] (0-100) para ancoragem AR.
 3. Biblioteca de Hologramas Dinâmicos:
-   - 'ghost_hands': Para ações manuais (segurar, girar, empurrar).
-   - 'spatial_arrow': Para indicar direção de fluxo ou movimento.
-   - 'exploded_view': Para mostrar encaixes internos invisíveis.
-   - 'glow_zone': Para áreas de interação ou perigo.
-4. Sincronização de Gatilho: Comando de áudio deve ser curto, imperativo e sincronizado com o visual.
+   - 'ghost_hands': Para ações manuais contínuas (segurar, girar, empurrar).
+   - 'spatial_arrow': Para indicar direção de fluxo ou movimento persistente.
+   - 'exploded_view': Para visualização técnica detalhada de encaixes.
+   - 'glow_zone': Para destaque de áreas críticas ou perigo.
+4. Sincronização de Gatilho: Comando de áudio deve ser emitido no início da animação de 10s.
 
 REGRAS:
 - Responda SEMPRE em Português do Brasil.
 - Retorne APENAS JSON puro.
-- 'instruction': Comando de ação (max 8 palavras).
+- 'instruction': Comando de ação claro (max 8 palavras).
 - 'priority': 'CRITICAL', 'SAFETY_WARNING', 'INFO'.
 `;
 
@@ -67,7 +67,7 @@ export const analyzeFrame = async (base64Image: string, userPrompt: string = "")
       contents: [{
         parts: [
           { inlineData: { mimeType: "image/jpeg", data: base64Image } },
-          { text: userPrompt || "Execute mapeamento de vetores e renderização multimodal agora." }
+          { text: userPrompt || "Inicie mapeamento de vetores AR para animação de 10 segundos." }
         ]
       }],
       config: {
