@@ -4,20 +4,18 @@ import { RepairAnalysis } from "../types";
 
 const SYSTEM_INSTRUCTION = `
 Você é o "FixIt Now", um assistente de reparos domésticos e automotivos de elite.
-Seu objetivo é fornecer instruções IMEDIATAS, ASSERTIVAS e CLARAS baseadas em imagens ou quadros de vídeo.
+Seu objetivo é fornecer instruções IMEDIATAS, ASSERTIVAS e CLARAS baseadas em imagens.
 
-CAPACIDADES DE DIAGNÓSTICO:
-1. Identificar emergências: vazamentos de água, problemas em painéis elétricos, baterias de carro, fumaça, etc.
-2. Localizar componentes específicos (válvulas, disjuntores, terminais).
+CAPACIDADES:
+1. Identificar emergências: vazamentos, painéis elétricos, baterias, etc.
+2. Localizar componentes específicos.
 
-REGRAS DE SAÍDA:
+REGRAS:
 - Responda SEMPRE em Português do Brasil.
-- 'instruction': Comando curto e imperativo (ex: "FECHE O REGISTRO AGORA!").
-- 'priority': 'CRITICAL' para perigo imediato, 'SAFETY_WARNING' para riscos elétricos/gás, 'INFO' para orientações gerais.
-- 'overlays': Marcadores visuais para a tela. Coordenadas x e y normalizadas (0-100).
-- SEMPRE priorize a segurança. Se houver fios expostos ou perigo real, use 'SAFETY_WARNING' e instrua a não tocar e chamar um profissional.
-
-Forneça a resposta apenas em formato JSON.
+- Retorne APENAS o JSON puro, sem markdown ou blocos de código.
+- 'instruction': Comando curto e imperativo.
+- 'priority': 'CRITICAL', 'SAFETY_WARNING' ou 'INFO'.
+- 'overlays': Array de objetos com {type, x, y, color, label}.
 `;
 
 const REPAIR_SCHEMA = {
@@ -56,7 +54,7 @@ export const analyzeFrame = async (base64Image: string, userPrompt: string = "")
         {
           parts: [
             { inlineData: { mimeType: "image/jpeg", data: base64Image } },
-            { text: userPrompt || "Identifique qualquer problema de reparo urgente nesta imagem e dê instruções." }
+            { text: userPrompt || "Analise esta imagem para reparos urgentes." }
           ]
         }
       ],
@@ -67,19 +65,23 @@ export const analyzeFrame = async (base64Image: string, userPrompt: string = "")
       }
     });
 
-    return JSON.parse(response.text || "{}") as RepairAnalysis;
+    const text = response.text || "{}";
+    // Limpeza básica para garantir que o JSON seja parseado mesmo se houver markdown
+    const jsonStr = text.replace(/```json/g, "").replace(/```/g, "").trim();
+    return JSON.parse(jsonStr) as RepairAnalysis;
   } catch (error) {
-    console.error("Erro na análise Gemini:", error);
+    console.error("Erro na análise:", error);
     throw error;
   }
 };
 
 export const speakInstruction = async (text: string) => {
+  if (!text) return;
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: `Diga de forma assertiva: ${text}` }] }],
+      contents: [{ parts: [{ text: `Comando direto: ${text}` }] }],
       config: {
         responseModalities: ["AUDIO"],
         speechConfig: {
@@ -100,7 +102,7 @@ export const speakInstruction = async (text: string) => {
       source.start();
     }
   } catch (error) {
-    console.error("Erro no TTS:", error);
+    console.warn("TTS falhou, mas continuando...", error);
   }
 };
 
