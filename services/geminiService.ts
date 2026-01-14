@@ -13,7 +13,7 @@ CAPACIDADES:
 REGRAS:
 - Responda SEMPRE em Português do Brasil.
 - Retorne APENAS o JSON puro.
-- 'instruction': Comando curto e imperativo.
+- 'instruction': Comando curto e imperativo (máximo 10 palavras).
 - 'priority': 'CRITICAL', 'SAFETY_WARNING' ou 'INFO'.
 - 'overlays': Marcadores visuais {type, x, y, color, label}.
 `;
@@ -45,15 +45,10 @@ const REPAIR_SCHEMA = {
   required: ['instruction', 'priority', 'overlays', 'isIssueResolved', 'detectedObject']
 };
 
-/**
- * Obtém a API KEY de forma segura para ambientes Vercel/Vite.
- */
 const getApiKey = (): string => {
-  // @ts-ignore - Tentativa de ler do Vite (comum no Vercel)
+  // @ts-ignore
   const viteKey = typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_KEY;
-  // Tentativa de ler do process.env padrão
   const processKey = process.env.API_KEY || (process.env as any).VITE_API_KEY;
-  
   const key = viteKey || processKey;
 
   if (!key || key === "undefined" || key === "") {
@@ -67,19 +62,19 @@ export const analyzeFrame = async (base64Image: string, userPrompt: string = "")
   try {
     apiKey = getApiKey();
   } catch (e) {
-    throw new Error("API_KEY não encontrada. No Vercel, configure VITE_API_KEY nas variáveis de ambiente.");
+    throw new Error("API_KEY_MISSING");
   }
 
   const ai = new GoogleGenAI({ apiKey });
   
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-pro-preview", // Modelo Gemini 3 conforme solicitado
+      model: "gemini-3-flash-preview", // Trocado para Flash para evitar erro de cota
       contents: [
         {
           parts: [
             { inlineData: { mimeType: "image/jpeg", data: base64Image } },
-            { text: userPrompt || "Analise esta imagem detalhadamente para identificar problemas técnicos ou de manutenção." }
+            { text: userPrompt || "Faça um diagnóstico rápido de reparo para esta imagem." }
           ]
         }
       ],
@@ -94,9 +89,12 @@ export const analyzeFrame = async (base64Image: string, userPrompt: string = "")
     const jsonStr = text.replace(/```json/g, "").replace(/```/g, "").trim();
     return JSON.parse(jsonStr) as RepairAnalysis;
   } catch (error: any) {
-    console.error("Erro no processamento Gemini 3 Pro:", error);
+    console.error("Erro Gemini:", error);
+    if (error.message?.includes("RESOURCE_EXHAUSTED") || error.message?.includes("429")) {
+      throw new Error("LIMITE_EXCEDIDO: O Google atingiu o limite de requisições gratuitas. Aguarde um minuto e tente novamente.");
+    }
     if (error.message?.includes("API key")) {
-      throw new Error("Chave de API inválida ou não configurada corretamente no Vercel.");
+      throw new Error("API_KEY_INVALIDA");
     }
     throw error;
   }
@@ -114,7 +112,7 @@ export const speakInstruction = async (text: string) => {
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: `Instrução curta: ${text}` }] }],
+      contents: [{ parts: [{ text: `Diga: ${text}` }] }],
       config: {
         responseModalities: ["AUDIO"],
         speechConfig: {
@@ -135,7 +133,7 @@ export const speakInstruction = async (text: string) => {
       source.start();
     }
   } catch (error) {
-    console.warn("TTS não disponível.");
+    console.warn("TTS Off");
   }
 };
 
