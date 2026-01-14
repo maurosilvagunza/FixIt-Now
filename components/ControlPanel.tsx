@@ -19,13 +19,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onToggleTTS
 }) => {
   return (
-    <div className="w-full p-4 z-20 pointer-events-none relative" style={{paddingBottom: 'env(safe-area-inset-bottom, 1.5rem)'}}>
+    <div className="w-full p-4 z-20 pointer-events-none" style={{paddingBottom: 'env(safe-area-inset-bottom, 1.5rem)'}}>
       <div
         className="max-w-xl mx-auto space-y-4 pointer-events-auto"
         style={{
-          maxHeight: 'calc(100vh - 6rem)',
-          overflowY: 'auto',
-          background: 'transparent',
+          marginBottom: '2rem',
         }}
       >
         
