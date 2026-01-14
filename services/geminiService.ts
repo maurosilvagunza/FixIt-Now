@@ -8,14 +8,14 @@ Seu objetivo é fornecer instruções IMEDIATAS, ASSERTIVAS e CLARAS baseadas em
 
 CAPACIDADES:
 1. Identificar emergências: vazamentos, painéis elétricos, baterias, etc.
-2. Localizar componentes específicos.
+2. Localizar componentes específicos com precisão absoluta.
 
 REGRAS:
 - Responda SEMPRE em Português do Brasil.
-- Retorne APENAS o JSON puro, sem markdown ou blocos de código.
+- Retorne APENAS o JSON puro.
 - 'instruction': Comando curto e imperativo.
 - 'priority': 'CRITICAL', 'SAFETY_WARNING' ou 'INFO'.
-- 'overlays': Array de objetos com {type, x, y, color, label}.
+- 'overlays': Marcadores visuais {type, x, y, color, label}.
 `;
 
 const REPAIR_SCHEMA = {
@@ -45,16 +45,41 @@ const REPAIR_SCHEMA = {
   required: ['instruction', 'priority', 'overlays', 'isIssueResolved', 'detectedObject']
 };
 
+/**
+ * Obtém a API KEY de forma segura para ambientes Vercel/Vite.
+ */
+const getApiKey = (): string => {
+  // @ts-ignore - Tentativa de ler do Vite (comum no Vercel)
+  const viteKey = typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_KEY;
+  // Tentativa de ler do process.env padrão
+  const processKey = process.env.API_KEY || (process.env as any).VITE_API_KEY;
+  
+  const key = viteKey || processKey;
+
+  if (!key || key === "undefined" || key === "") {
+    throw new Error("CONFIG_MISSING");
+  }
+  return key;
+};
+
 export const analyzeFrame = async (base64Image: string, userPrompt: string = ""): Promise<RepairAnalysis> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  let apiKey: string;
+  try {
+    apiKey = getApiKey();
+  } catch (e) {
+    throw new Error("API_KEY não encontrada. No Vercel, configure VITE_API_KEY nas variáveis de ambiente.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
+  
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3-pro-preview", // Modelo Gemini 3 conforme solicitado
       contents: [
         {
           parts: [
             { inlineData: { mimeType: "image/jpeg", data: base64Image } },
-            { text: userPrompt || "Analise esta imagem para reparos urgentes." }
+            { text: userPrompt || "Analise esta imagem detalhadamente para identificar problemas técnicos ou de manutenção." }
           ]
         }
       ],
@@ -66,22 +91,30 @@ export const analyzeFrame = async (base64Image: string, userPrompt: string = "")
     });
 
     const text = response.text || "{}";
-    // Limpeza básica para garantir que o JSON seja parseado mesmo se houver markdown
     const jsonStr = text.replace(/```json/g, "").replace(/```/g, "").trim();
     return JSON.parse(jsonStr) as RepairAnalysis;
-  } catch (error) {
-    console.error("Erro na análise:", error);
+  } catch (error: any) {
+    console.error("Erro no processamento Gemini 3 Pro:", error);
+    if (error.message?.includes("API key")) {
+      throw new Error("Chave de API inválida ou não configurada corretamente no Vercel.");
+    }
     throw error;
   }
 };
 
 export const speakInstruction = async (text: string) => {
-  if (!text) return;
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  let apiKey: string;
+  try {
+    apiKey = getApiKey();
+  } catch (e) {
+    return;
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: `Comando direto: ${text}` }] }],
+      contents: [{ parts: [{ text: `Instrução curta: ${text}` }] }],
       config: {
         responseModalities: ["AUDIO"],
         speechConfig: {
@@ -102,7 +135,7 @@ export const speakInstruction = async (text: string) => {
       source.start();
     }
   } catch (error) {
-    console.warn("TTS falhou, mas continuando...", error);
+    console.warn("TTS não disponível.");
   }
 };
 
