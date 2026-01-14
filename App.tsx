@@ -4,7 +4,7 @@ import { analyzeFrame, speakInstruction } from './services/geminiService';
 import { RepairAnalysis, AppState } from './types';
 import ARLayer from './components/ARLayer';
 import ControlPanel from './components/ControlPanel';
-import { Wrench, ShieldAlert, RefreshCcw, Zap } from 'lucide-react';
+import { Wrench, ShieldAlert, RefreshCcw, Zap, Target } from 'lucide-react';
 
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>({
@@ -39,7 +39,7 @@ const App: React.FC = () => {
           };
         }
       } catch (err) {
-        setState(prev => ({ ...prev, error: "Câmera não acessível. Verifique as permissões." }));
+        setState(prev => ({ ...prev, error: "Câmera não acessível." }));
       }
     };
 
@@ -74,38 +74,29 @@ const App: React.FC = () => {
         speakInstruction(analysis.instruction);
       }
     } catch (err: any) {
-      console.error("Erro no diagnóstico:", err);
-      let errorMessage = "Erro inesperado.";
-      
-      const rawError = err.message || "";
-      if (rawError.includes("API_KEY_MISSING") || rawError.includes("API Key")) {
-        errorMessage = "ERRO: VITE_API_KEY ausente no Vercel.";
-      } else if (rawError.includes("RESOURCE_EXHAUSTED") || rawError.includes("429") || rawError.includes("Quota")) {
-        errorMessage = "Cota Excedida: Aguarde 1 minuto (Limite Free).";
-      } else if (rawError.includes("safety") || rawError.includes("blocked")) {
-        errorMessage = "Conteúdo bloqueado por segurança da IA.";
-      } else {
-        errorMessage = "Falha técnica. Tente novamente.";
-      }
-
-      setState(prev => ({ ...prev, isAnalyzing: false, error: errorMessage }));
+      setState(prev => ({ ...prev, isAnalyzing: false, error: err.message }));
     }
   }, [state.isTTSEnabled]);
 
   return (
     <div className="relative w-full h-full bg-black overflow-hidden font-sans select-none touch-none">
-      {/* Header Compacto - Escala melhor em Tablets */}
-      <div className="absolute top-0 left-0 w-full p-3 md:p-6 z-30 pointer-events-none">
+      {/* Header com Status do Motor AR */}
+      <div className="absolute top-0 left-0 w-full p-3 md:p-6 z-30 flex justify-between items-start pointer-events-none">
         <div className="flex items-center gap-2 bg-slate-900/90 backdrop-blur-2xl px-3 py-1.5 rounded-full border border-white/10 pointer-events-auto shadow-2xl w-fit">
-          <Wrench className="w-3.5 h-3.5 md:w-4 md:h-4 text-blue-400" />
+          <Wrench className="w-3.5 h-3.5 text-blue-400" />
           <h1 className="text-[10px] md:text-xs font-black tracking-tighter text-white uppercase">
             FixIt <span className="text-blue-400">Now</span>
           </h1>
           <div className="h-2.5 w-[1px] bg-slate-700 mx-0.5" />
           <div className="flex items-center gap-0.5">
-            <Zap className="w-2.5 h-2.5 text-yellow-400 fill-yellow-400" />
-            <span className="text-[8px] md:text-[9px] text-blue-300 font-mono font-bold uppercase">Flash</span>
+            <Target className="w-2.5 h-2.5 text-green-400 animate-pulse" />
+            <span className="text-[8px] md:text-[9px] text-green-300 font-mono font-bold uppercase tracking-widest">AR ENGINE ACTIVE</span>
           </div>
+        </div>
+
+        <div className="bg-red-600/20 backdrop-blur-md px-3 py-1.5 rounded-lg border border-red-500/30 pointer-events-auto flex items-center gap-2">
+          <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping" />
+          <span className="text-[8px] md:text-[10px] text-red-100 font-black uppercase tracking-tighter">MODO RESGATE</span>
         </div>
       </div>
 
@@ -113,33 +104,20 @@ const App: React.FC = () => {
         {!state.isCameraReady && !state.error && (
           <div className="flex flex-col items-center gap-4">
             <div className="w-10 h-10 border-2 border-slate-800 border-t-blue-500 rounded-full animate-spin" />
-            <p className="text-slate-500 font-mono text-[9px] tracking-widest uppercase animate-pulse">Vision Ready...</p>
+            <p className="text-slate-500 font-mono text-[9px] tracking-widest uppercase animate-pulse">Sincronizando Mapeamento...</p>
           </div>
         )}
 
         {state.error && (
-          <div className="z-50 bg-slate-950/95 backdrop-blur-3xl border border-red-500/20 p-6 rounded-[2rem] text-center max-w-[85%] md:max-w-sm mx-auto shadow-2xl animate-in zoom-in duration-300">
+          <div className="z-50 bg-slate-950/95 backdrop-blur-3xl border border-red-500/20 p-6 rounded-[2rem] text-center max-w-[85%] md:max-sm mx-auto">
             <ShieldAlert className="w-10 h-10 text-red-500 mx-auto mb-4" />
-            <h2 className="text-white font-black text-base md:text-lg mb-2 uppercase">Status Crítico</h2>
-            <p className="text-slate-400 text-xs md:text-sm mb-6 leading-relaxed">{state.error}</p>
-            <button 
-              onClick={() => window.location.reload()} 
-              className="w-full py-3.5 bg-white text-black rounded-xl font-black text-[10px] md:text-xs uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all active:scale-95 flex items-center justify-center gap-2"
-            >
-              <RefreshCcw className="w-4 h-4" />
-              Recarregar
-            </button>
+            <h2 className="text-white font-black text-base uppercase mb-2 tracking-widest">Falha Espacial</h2>
+            <p className="text-slate-400 text-xs mb-6">{state.error}</p>
+            <button onClick={() => window.location.reload()} className="w-full py-3.5 bg-white text-black rounded-xl font-black text-[10px] uppercase">Recarregar</button>
           </div>
         )}
 
-        <video 
-          ref={videoRef} 
-          autoPlay 
-          playsInline 
-          muted 
-          className={`absolute w-full h-full object-cover transition-opacity duration-700 ${state.isCameraReady ? 'opacity-100' : 'opacity-0'}`} 
-        />
-        
+        <video ref={videoRef} autoPlay playsInline muted className={`absolute w-full h-full object-cover transition-opacity duration-700 ${state.isCameraReady ? 'opacity-100' : 'opacity-0'}`} />
         <canvas ref={canvasRef} className="hidden" />
 
         {state.isCameraReady && state.analysis && (
@@ -148,8 +126,8 @@ const App: React.FC = () => {
 
         {state.isAnalyzing && (
           <div className="absolute inset-0 z-20 pointer-events-none">
-            <div className="absolute top-0 left-0 w-full h-[2px] bg-blue-500/80 shadow-[0_0_15px_rgba(59,130,246,0.6)] animate-[scan_1.5s_infinite]" />
-            <div className="absolute inset-0 bg-blue-500/5 animate-pulse" />
+            <div className="absolute top-0 left-0 w-full h-[2px] bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,1)] animate-[scan_1s_infinite]" />
+            <div className="absolute inset-0 bg-blue-500/5 backdrop-brightness-110" />
           </div>
         )}
       </div>

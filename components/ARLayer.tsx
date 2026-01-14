@@ -14,7 +14,6 @@ const ARLayer: React.FC<ARLayerProps> = ({ markers, width, height }) => {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
@@ -31,42 +30,68 @@ const ARLayer: React.FC<ARLayerProps> = ({ markers, width, height }) => {
       };
       const color = colorMap[marker.color] || '#ffffff';
 
-      ctx.beginPath();
+      ctx.save();
       ctx.strokeStyle = color;
-      ctx.lineWidth = 4;
-      ctx.fillStyle = color + '33'; // Semi-transparent fill
+      ctx.lineWidth = 3;
+      ctx.setLineDash([]);
 
-      if (marker.type === 'circle') {
+      if (marker.type === 'circle' || marker.type === 'glow_ring') {
+        ctx.beginPath();
         ctx.arc(x, y, 40, 0, Math.PI * 2);
         ctx.stroke();
-        ctx.fill();
-        
-        // Add a pulsing effect if critical? We can't do animations easily in standard 2D loop here without a raf
-        // but simple static shapes work well.
-      } else if (marker.type === 'rect') {
-        ctx.strokeRect(x - 40, y - 40, 80, 80);
-        ctx.fillRect(x - 40, y - 40, 80, 80);
-      } else if (marker.type === 'arrow') {
-        // Simple arrow pointing
-        ctx.save();
-        ctx.translate(x, y);
-        if (marker.rotation) {
-          ctx.rotate((marker.rotation * Math.PI) / 180);
+        if (marker.type === 'glow_ring') {
+          ctx.beginPath();
+          ctx.setLineDash([5, 5]);
+          ctx.arc(x, y, 50, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.fillStyle = color + '22';
+          ctx.fill();
         }
+      } else if (marker.type === 'rect' || marker.type === '3d_object') {
+        ctx.strokeRect(x - 40, y - 40, 80, 80);
+        if (marker.type === '3d_object') {
+          // Draw wireframe box
+          ctx.beginPath();
+          ctx.moveTo(x - 30, y - 30);
+          ctx.lineTo(x + 50, y - 30);
+          ctx.lineTo(x + 50, y + 50);
+          ctx.stroke();
+          ctx.fillStyle = color + '11';
+          ctx.fillRect(x - 40, y - 40, 80, 80);
+        }
+      } else if (marker.type === 'arrow') {
+        ctx.translate(x, y);
+        if (marker.rotation) ctx.rotate((marker.rotation * Math.PI) / 180);
         ctx.beginPath();
         ctx.moveTo(-20, 20);
         ctx.lineTo(0, 0);
         ctx.lineTo(20, 20);
         ctx.stroke();
-        ctx.restore();
+      } else if (marker.type === 'ghost_hand') {
+        // Simple hand representation
+        ctx.translate(x, y);
+        ctx.beginPath();
+        ctx.arc(0, 0, 15, 0, Math.PI * 2);
+        for(let i=0; i<4; i++) {
+          ctx.moveTo(-10 + (i*6), -10);
+          ctx.lineTo(-10 + (i*6), -30);
+        }
+        ctx.stroke();
+        ctx.fillStyle = color + '44';
+        ctx.fill();
       }
 
       if (marker.label) {
+        ctx.restore();
+        ctx.save();
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 16px sans-serif';
+        ctx.font = 'bold 12px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(marker.label, x, y + 60);
+        ctx.shadowBlur = 4;
+        ctx.shadowColor = 'black';
+        ctx.fillText(marker.label.toUpperCase(), x, y + 60);
       }
+      ctx.restore();
     });
   }, [markers, width, height]);
 

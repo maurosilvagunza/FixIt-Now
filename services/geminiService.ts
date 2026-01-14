@@ -3,19 +3,23 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { RepairAnalysis } from "../types";
 
 const SYSTEM_INSTRUCTION = `
-Você é o "FixIt Now", um assistente de reparos domésticos e automotivos de elite.
-Seu objetivo é fornecer instruções IMEDIATAS, ASSERTIVAS e CLARAS baseadas em imagens.
+Você é o "Mecanismo de Visão Espacial e Renderização AR" do sistema FixIt Now.
+Sua missão é mapear o ambiente tridimensionalmente e fornecer instruções em tempo real para a renderização de hologramas na interface do usuário.
 
-CAPACIDADES:
-1. Identificar emergências: vazamentos, painéis elétricos, baterias, etc.
-2. Localizar componentes específicos com precisão absoluta.
+PROTOCOLO DE EXECUÇÃO:
+1. Mapeamento 3D: Localize os componentes e forneça as coordenadas exatas [x, y] (0-100).
+2. Hologramas Dinâmicos: Use os tipos específicos:
+   - 'ghost_hand': Para mostrar movimentos manuais (girar, puxar, conectar).
+   - 'spatial_arrow' (use 'arrow'): Para direções de fluxo ou força.
+   - 'glow_ring' (use 'glow_ring'): Para foco em parafusos, botões ou vazamentos.
+   - '3d_object' (use '3d_object'): Para representar peças que devem ser encaixadas.
+3. Sincronização de Áudio: O comando de voz deve ser curto e imperativo, sincronizado com o holograma.
 
 REGRAS:
-- Responda SEMPRE em Português do Brasil.
+- Responda APENAS em Português do Brasil.
 - Retorne APENAS o JSON puro.
-- 'instruction': Comando curto e imperativo (máximo 10 palavras).
-- 'priority': 'CRITICAL', 'SAFETY_WARNING' ou 'INFO'.
-- 'overlays': Marcadores visuais {type, x, y, color, label}.
+- 'instruction': Máximo 10 palavras.
+- 'priority': 'CRITICAL' (vermelho), 'SAFETY_WARNING' (laranja), 'INFO' (azul).
 `;
 
 const REPAIR_SCHEMA = {
@@ -31,7 +35,7 @@ const REPAIR_SCHEMA = {
       items: {
         type: Type.OBJECT,
         properties: {
-          type: { type: Type.STRING, enum: ['arrow', 'circle', 'rect'] },
+          type: { type: Type.STRING, enum: ['arrow', 'circle', 'rect', 'ghost_hand', 'glow_ring', '3d_object'] },
           x: { type: Type.NUMBER },
           y: { type: Type.NUMBER },
           color: { type: Type.STRING, enum: ['red', 'green', 'blue', 'yellow'] },
@@ -58,23 +62,17 @@ const getApiKey = (): string => {
 };
 
 export const analyzeFrame = async (base64Image: string, userPrompt: string = ""): Promise<RepairAnalysis> => {
-  let apiKey: string;
-  try {
-    apiKey = getApiKey();
-  } catch (e) {
-    throw new Error("API_KEY_MISSING");
-  }
-
+  const apiKey = getApiKey();
   const ai = new GoogleGenAI({ apiKey });
   
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview", // Trocado para Flash para evitar erro de cota
+      model: "gemini-3-flash-preview",
       contents: [
         {
           parts: [
             { inlineData: { mimeType: "image/jpeg", data: base64Image } },
-            { text: userPrompt || "Faça um diagnóstico rápido de reparo para esta imagem." }
+            { text: userPrompt || "Execute mapeamento espacial e diagnóstico de reparo imediato." }
           ]
         }
       ],
@@ -89,30 +87,20 @@ export const analyzeFrame = async (base64Image: string, userPrompt: string = "")
     const jsonStr = text.replace(/```json/g, "").replace(/```/g, "").trim();
     return JSON.parse(jsonStr) as RepairAnalysis;
   } catch (error: any) {
-    console.error("Erro Gemini:", error);
     if (error.message?.includes("RESOURCE_EXHAUSTED") || error.message?.includes("429")) {
-      throw new Error("LIMITE_EXCEDIDO: O Google atingiu o limite de requisições gratuitas. Aguarde um minuto e tente novamente.");
-    }
-    if (error.message?.includes("API key")) {
-      throw new Error("API_KEY_INVALIDA");
+      throw new Error("LIMITE_EXCEDIDO");
     }
     throw error;
   }
 };
 
 export const speakInstruction = async (text: string) => {
-  let apiKey: string;
   try {
-    apiKey = getApiKey();
-  } catch (e) {
-    return;
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
-  try {
+    const apiKey = getApiKey();
+    const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: `Diga: ${text}` }] }],
+      contents: [{ parts: [{ text: text }] }],
       config: {
         responseModalities: ["AUDIO"],
         speechConfig: {
@@ -132,9 +120,7 @@ export const speakInstruction = async (text: string) => {
       source.connect(audioContext.destination);
       source.start();
     }
-  } catch (error) {
-    console.warn("TTS Off");
-  }
+  } catch (e) {}
 };
 
 function decode(base64: string) {
