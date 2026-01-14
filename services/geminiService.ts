@@ -7,20 +7,20 @@ Você é o "Mecanismo de Visão Espacial e Renderização Multimodal" do sistema
 Sua missão é mapear o ambiente e traduzir necessidades técnicas em instruções cinéticas e holográficas precisas de 10 segundos.
 
 PROTOCOLO DE ANÁLISE E EXECUÇÃO:
-1. Diagnóstico de Objeto e Estado: Identifique o objeto e seu estado anômalo (ex: cabo solto, parafuso frouxo).
-2. Mapeamento de Vetores: Forneça coordenadas [x, y] (0-100) para ancoragem AR.
-3. Biblioteca de Hologramas Dinâmicos (SELEÇÃO CRÍTICA):
-   - 'ghost_hands': Use SEMPRE para ações manuais. O 'label' DEVE ser uma destas ações: "EMPURRAR", "GIRAR", "PUXAR", "PRESSIONAR" ou "CONECTAR".
-   - 'spatial_arrow': Use para indicar direção de encaixe ou fluxo.
-   - 'exploded_view': Use para mostrar o interior de componentes.
-   - 'glow_zone': Use para destacar perigo ou foco.
+1. Diagnóstico de Objeto e Estado: Identifique o objeto e seu estado anômalo (ex: cabo solto, componente desconectado).
+2. Geometria Espacial: Calcule coordenadas precisas [ymin, xmin, ymax, xmax] (0-100) para cada marcador/objeto detectado. O valor 'x' e 'y' deve ser o centro dessa caixa.
+3. Biblioteca de Hologramas Dinâmicos:
+   - 'ghost_hands': Use para ações manuais. O 'label' DEVE ser: "EMPURRAR", "GIRAR", "PUXAR", "PRESSIONAR" ou "CONECTAR".
+   - 'spatial_arrow': Use para indicar direção de encaixe, fluxo ou movimento.
+   - 'exploded_view': Use para mostrar o encaixe interno de componentes.
+   - 'glow_zone': Use para destacar áreas de interação ou perigo.
 
-Sincronização: A instrução de áudio deve ser curta e direta ao ponto, disparada junto com a animação.
+Sincronização: A instrução de áudio disparada pelo app deve coincidir com o início da animação visual.
 
 REGRAS:
 - Responda SEMPRE em Português do Brasil.
 - Retorne APENAS JSON puro.
-- 'instruction': Comando de ação (ex: "Empurre o cabo para conectar").
+- 'instruction': Comando de ação curto (max 8 palavras).
 - 'priority': 'CRITICAL', 'SAFETY_WARNING', 'INFO'.
 `;
 
@@ -40,8 +40,13 @@ const REPAIR_SCHEMA = {
           type: { type: Type.STRING, enum: ['ghost_hands', 'spatial_arrow', 'exploded_view', 'glow_zone', 'circle', 'rect'] },
           x: { type: Type.NUMBER },
           y: { type: Type.NUMBER },
+          bbox: { 
+            type: Type.ARRAY, 
+            items: { type: Type.NUMBER },
+            description: "[ymin, xmin, ymax, xmax] normalizado 0-100"
+          },
           color: { type: Type.STRING, enum: ['red', 'green', 'blue', 'yellow'] },
-          label: { type: Type.STRING, description: "Ação específica: EMPURRAR, GIRAR, PUXAR, PRESSIONAR, CONECTAR" },
+          label: { type: Type.STRING },
           rotation: { type: Type.NUMBER }
         },
         required: ['type', 'x', 'y', 'color']
@@ -68,7 +73,7 @@ export const analyzeFrame = async (base64Image: string, userPrompt: string = "")
       contents: [{
         parts: [
           { inlineData: { mimeType: "image/jpeg", data: base64Image } },
-          { text: userPrompt || "Execute mapeamento de vetores AR para uma animação de 10 segundos que demonstre a ação física necessária." }
+          { text: userPrompt || "Execute mapeamento de vetores e geometria espacial AR agora." }
         ]
       }],
       config: {

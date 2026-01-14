@@ -4,8 +4,9 @@ export type OverlayColor = 'red' | 'green' | 'blue' | 'yellow';
 
 export interface ARMarker {
   type: OverlayType;
-  x: number; // 0-100 normalized
-  y: number; // 0-100 normalized
+  x: number; // Centro X 0-100
+  y: number; // Centro Y 0-100
+  bbox?: [number, number, number, number]; // [ymin, xmin, ymax, xmax] normalizado 0-100
   color: OverlayColor;
   label?: string;
   rotation?: number;
