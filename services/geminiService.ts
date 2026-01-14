@@ -48,9 +48,9 @@ const REPAIR_SCHEMA = {
 };
 
 export const analyzeFrame = async (base64Image: string, userPrompt: string = ""): Promise<RepairAnalysis> => {
-  const apiKey = (import.meta as any).env.MY_API_KEY || process.env.MY_API_KEY;
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey || apiKey === 'undefined' || apiKey.includes('YOUR_GEMINI_API_KEY')) {
-    throw new Error("Chave de API Gemini não configurada. Configure MY_API_KEY no .env.local");
+    throw new Error("Chave de API Gemini não configurada. Configure VITE_GEMINI_API_KEY no .env.local ou no painel do Vercel.");
   }
   const ai = new GoogleGenAI({ apiKey });
   try {
@@ -79,9 +79,9 @@ export const analyzeFrame = async (base64Image: string, userPrompt: string = "")
 };
 
 export const speakInstruction = async (text: string) => {
-  const apiKey = (import.meta as any).env.MY_API_KEY || process.env.MY_API_KEY;
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey || apiKey === 'undefined' || apiKey.includes('YOUR_GEMINI_API_KEY')) {
-    console.warn("Chave de API não configurada para TTS");
+    console.warn("Chave de API não configurada para TTS. Configure VITE_GEMINI_API_KEY no .env.local ou no painel do Vercel.");
     return;
   }
   const ai = new GoogleGenAI({ apiKey });
