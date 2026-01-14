@@ -48,7 +48,10 @@ const App: React.FC = () => {
 
   const handleDiagnostic = useCallback(async (prompt?: string) => {
     if (!videoRef.current || !canvasRef.current) return;
-    setState(prev => ({ ...prev, isAnalyzing: true, error: null }));
+    
+    // Limpa a análise anterior IMEDIATAMENTE ao clicar para remover os hologramas da tela
+    setState(prev => ({ ...prev, isAnalyzing: true, error: null, analysis: null }));
+    
     try {
       const canvas = canvasRef.current;
       canvas.width = videoRef.current.videoWidth;
@@ -56,10 +59,15 @@ const App: React.FC = () => {
       canvas.getContext('2d')?.drawImage(videoRef.current, 0, 0);
       const base64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
       const analysis = await analyzeFrame(base64, prompt);
+      
       setState(prev => ({ ...prev, isAnalyzing: false, analysis }));
       if (state.isTTSEnabled && analysis.instruction) speakInstruction(analysis.instruction);
     } catch (err: any) {
-      setState(prev => ({ ...prev, isAnalyzing: false, error: err.message === "LIMITE_EXCEDIDO" ? "COTA EXCEDIDA. TENTE EM 1 MINUTO." : "FALHA NA TELEMETRIA." }));
+      setState(prev => ({ 
+        ...prev, 
+        isAnalyzing: false, 
+        error: err.message === "LIMITE_EXCEDIDO" ? "COTA EXCEDIDA. TENTE EM 1 MINUTO." : "FALHA NA TELEMETRIA." 
+      }));
     }
   }, [state.isTTSEnabled]);
 

@@ -6,6 +6,10 @@ const SYSTEM_INSTRUCTION = `
 Você é o "Mecanismo de Visão Espacial e Renderização Multimodal" do sistema FixIt Now.
 Sua missão é mapear o ambiente e traduzir necessidades técnicas em instruções cinéticas e holográficas precisas de 10 segundos.
 
+PROTOCOLO DE SEGURANÇA E ÉTICA:
+- FOCO EXCLUSIVO: Analise APENAS objetos inanimados, máquinas, eletrônicos e infraestrutura.
+- PROIBIÇÃO ESTRITA: Não identifique, analise ou forneça instruções que envolvam seres humanos. Se um humano for o foco da imagem, responda que o sistema é exclusivo para reparos técnicos em objetos.
+
 PROTOCOLO DE ANÁLISE E EXECUÇÃO:
 1. Diagnóstico de Objeto e Estado: Identifique o objeto e seu estado anômalo (ex: cabo solto, componente desconectado).
 2. Geometria Espacial: Calcule coordenadas precisas [ymin, xmin, ymax, xmax] (0-100) para cada marcador/objeto detectado. O valor 'x' e 'y' deve ser o centro dessa caixa.
@@ -73,7 +77,7 @@ export const analyzeFrame = async (base64Image: string, userPrompt: string = "")
       contents: [{
         parts: [
           { inlineData: { mimeType: "image/jpeg", data: base64Image } },
-          { text: userPrompt || "Execute mapeamento de vetores e geometria espacial AR agora." }
+          { text: userPrompt || "Execute mapeamento de vetores e geometria espacial AR agora. Lembre-se: apenas objetos, ignore humanos." }
         ]
       }],
       config: {
