@@ -20,7 +20,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 }) => {
   return (
     <div className="w-full p-4 z-20 pointer-events-none relative" style={{paddingBottom: 'env(safe-area-inset-bottom, 1.5rem)'}}>
-      <div className="max-w-xl mx-auto space-y-4 pointer-events-auto">
+      <div
+        className="max-w-xl mx-auto space-y-4 pointer-events-auto"
+        style={{
+          maxHeight: 'calc(100vh - 6rem)',
+          overflowY: 'auto',
+          background: 'transparent',
+        }}
+      >
         
         {analysis && (
           <div className={`rounded-2xl p-4 shadow-2xl backdrop-blur-md border ${
