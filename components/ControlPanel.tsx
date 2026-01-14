@@ -19,7 +19,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onToggleTTS
 }) => {
   return (
-    <div className="absolute bottom-0 left-0 w-full p-4 z-20 pointer-events-none">
+    <div className="w-full p-4 z-20 pointer-events-none relative" style={{paddingBottom: 'env(safe-area-inset-bottom, 1.5rem)'}}>
       <div className="max-w-xl mx-auto space-y-4 pointer-events-auto">
         
         {analysis && (
@@ -60,7 +60,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           </div>
         )}
 
-        <div className="flex items-center justify-center gap-4">
+        <div className="flex items-center justify-center gap-4 pb-4 sm:pb-2">
           <button
             onClick={() => onAnalyze()}
             disabled={isAnalyzing}
@@ -95,7 +95,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </div>
         
         {!analysis && !isAnalyzing && (
-          <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar justify-center">
+          <div className="flex gap-2 overflow-x-auto pb-4 sm:pb-2 no-scrollbar justify-center">
             {["Vazamento", "Falta de Luz", "Chupeta Bateria", "Cheiro de Gás"].map(label => (
               <button
                 key={label}
