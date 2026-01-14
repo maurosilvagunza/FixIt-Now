@@ -22,70 +22,77 @@ const ARLayer: React.FC<ARLayerProps> = ({ markers, width, height }) => {
     markers.forEach(marker => {
       const x = (marker.x / 100) * width;
       const y = (marker.y / 100) * height;
-      const colorMap = {
-        red: '#ef4444',
-        green: '#22c55e',
-        blue: '#3b82f6',
-        yellow: '#eab308'
-      };
+      const colorMap = { red: '#ff4d4d', green: '#4ade80', blue: '#60a5fa', yellow: '#facc15' };
       const color = colorMap[marker.color] || '#ffffff';
 
       ctx.save();
       ctx.strokeStyle = color;
-      ctx.lineWidth = 3;
-      ctx.setLineDash([]);
+      ctx.lineWidth = 4;
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = color;
 
-      if (marker.type === 'circle' || marker.type === 'glow_ring') {
-        ctx.beginPath();
-        ctx.arc(x, y, 40, 0, Math.PI * 2);
-        ctx.stroke();
-        if (marker.type === 'glow_ring') {
+      switch (marker.type) {
+        case 'ghost_hands':
+          // Desenha ícone de mão cinético
+          ctx.translate(x, y);
           ctx.beginPath();
-          ctx.setLineDash([5, 5]);
-          ctx.arc(x, y, 50, 0, Math.PI * 2);
+          ctx.arc(0, 0, 15, 0, Math.PI * 2);
+          for (let i = 0; i < 4; i++) {
+            ctx.moveTo(-10 + (i * 7), -10);
+            ctx.lineTo(-10 + (i * 7), -30);
+          }
+          ctx.stroke();
+          ctx.fillStyle = color + '33';
+          ctx.fill();
+          break;
+
+        case 'spatial_arrow':
+          ctx.translate(x, y);
+          if (marker.rotation) ctx.rotate((marker.rotation * Math.PI) / 180);
+          ctx.beginPath();
+          ctx.moveTo(-25, 25);
+          ctx.lineTo(0, 0);
+          ctx.lineTo(25, 25);
+          ctx.lineWidth = 6;
+          ctx.stroke();
+          break;
+
+        case 'glow_zone':
+          const pulse = (Math.sin(Date.now() / 200) + 1) * 5;
+          ctx.beginPath();
+          ctx.arc(x, y, 40 + pulse, 0, Math.PI * 2);
+          ctx.setLineDash([10, 5]);
           ctx.stroke();
           ctx.fillStyle = color + '22';
           ctx.fill();
-        }
-      } else if (marker.type === 'rect' || marker.type === '3d_object') {
-        ctx.strokeRect(x - 40, y - 40, 80, 80);
-        if (marker.type === '3d_object') {
-          // Draw wireframe box
+          break;
+
+        case 'exploded_view':
+          ctx.strokeRect(x - 45, y - 45, 90, 90);
+          ctx.setLineDash([5, 5]);
+          ctx.strokeRect(x - 20, y - 20, 40, 40);
           ctx.beginPath();
-          ctx.moveTo(x - 30, y - 30);
-          ctx.lineTo(x + 50, y - 30);
-          ctx.lineTo(x + 50, y + 50);
+          ctx.moveTo(x - 45, y - 45); ctx.lineTo(x - 20, y - 20);
+          ctx.moveTo(x + 45, y - 45); ctx.lineTo(x + 20, y - 20);
           ctx.stroke();
-          ctx.fillStyle = color + '11';
-          ctx.fillRect(x - 40, y - 40, 80, 80);
-        }
-      } else if (marker.type === 'arrow') {
-        ctx.translate(x, y);
-        if (marker.rotation) ctx.rotate((marker.rotation * Math.PI) / 180);
-        ctx.beginPath();
-        ctx.moveTo(-20, 20);
-        ctx.lineTo(0, 0);
-        ctx.lineTo(20, 20);
-        ctx.stroke();
-      } else if (marker.type === 'ghost_hand') {
-        // Simple hand representation
-        ctx.translate(x, y);
-        ctx.beginPath();
-        ctx.arc(0, 0, 15, 0, Math.PI * 2);
-        for(let i=0; i<4; i++) {
-          ctx.moveTo(-10 + (i*6), -10);
-          ctx.lineTo(-10 + (i*6), -30);
-        }
-        ctx.stroke();
-        ctx.fillStyle = color + '44';
-        ctx.fill();
+          break;
+
+        case 'circle':
+          ctx.beginPath();
+          ctx.arc(x, y, 35, 0, Math.PI * 2);
+          ctx.stroke();
+          break;
+
+        case 'rect':
+          ctx.strokeRect(x - 40, y - 40, 80, 80);
+          break;
       }
 
       if (marker.label) {
         ctx.restore();
         ctx.save();
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 12px sans-serif';
+        ctx.font = '900 11px sans-serif';
         ctx.textAlign = 'center';
         ctx.shadowBlur = 4;
         ctx.shadowColor = 'black';
@@ -95,14 +102,7 @@ const ARLayer: React.FC<ARLayerProps> = ({ markers, width, height }) => {
     });
   }, [markers, width, height]);
 
-  return (
-    <canvas
-      ref={canvasRef}
-      width={width}
-      height={height}
-      className="absolute top-0 left-0 w-full h-full pointer-events-none z-10"
-    />
-  );
+  return <canvas ref={canvasRef} width={width} height={height} className="absolute top-0 left-0 w-full h-full pointer-events-none z-10" />;
 };
 
 export default ARLayer;

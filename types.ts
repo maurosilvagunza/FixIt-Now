@@ -1,5 +1,5 @@
 
-export type OverlayType = 'arrow' | 'circle' | 'rect' | 'ghost_hand' | 'glow_ring' | '3d_object';
+export type OverlayType = 'ghost_hands' | 'spatial_arrow' | 'exploded_view' | 'glow_zone' | 'circle' | 'rect';
 export type OverlayColor = 'red' | 'green' | 'blue' | 'yellow';
 
 export interface ARMarker {
